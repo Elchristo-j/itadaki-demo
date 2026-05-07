@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>阿波居酒屋 頂 — ご注文</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C9A84C;--gold-light:#E8C97A;--gold-dim:#7A6030;
+  --bg:#0C0C0C;--bg2:#141414;--bg3:#1C1C1C;--bg4:#242424;
+  --border:rgba(201,168,76,0.15);--border2:rgba(201,168,76,0.32);
+  --text:#EDE8DE;--text2:#A08C70;--text3:#5A4E3C;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+
+/* grain */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.7}
+
+/* header */
+.app-header{position:sticky;top:0;z-index:100;background:rgba(12,12,12,0.94);backdrop-filter:blur(14px);border-bottom:0.5px solid var(--border);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.store-name{font-family:'Noto Serif JP',serif;font-size:14px;font-weight:700;color:var(--gold);letter-spacing:.12em;line-height:1.3}
+.store-name small{display:block;font-size:9px;font-weight:400;color:var(--text3);letter-spacing:.2em;margin-bottom:1px}
+.table-badge{font-size:10px;color:var(--text2);letter-spacing:.06em;border:0.5px solid var(--border2);padding:4px 10px;border-radius:20px;white-space:nowrap}
+.cart-btn{position:relative;width:40px;height:40px;border:0.5px solid var(--border2);border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .2s}
+.cart-btn:hover{background:var(--bg4)}
+.cart-btn svg{width:18px;height:18px;stroke:var(--gold);fill:none;stroke-width:1.5}
+.cart-count{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#0C0C0C;font-size:10px;font-weight:500;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.cart-count.pop{animation:pop .25s ease}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.45)}}
+
+/* hero */
+.hero{padding:20px 18px 14px;border-bottom:0.5px solid var(--border)}
+.hero-eyebrow{font-size:9px;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;margin-bottom:5px}
+.hero-row{display:flex;align-items:baseline;gap:10px;margin-bottom:5px}
+.hero-table{font-family:'Noto Serif JP',serif;font-size:20px;font-weight:700;color:var(--text)}
+.hero-table span{color:var(--gold)}
+.hero-meta{font-size:11px;color:var(--text2);display:flex;gap:14px}
+.hero-meta span{display:flex;align-items:center;gap:4px}
+
+/* gold divider */
+.gold-div{height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);opacity:.5;margin:0 18px}
+
+/* category tabs */
+.cat-scroll{overflow-x:auto;padding:12px 18px;display:flex;gap:7px;scrollbar-width:none;border-bottom:0.5px solid var(--border)}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-tab{flex-shrink:0;padding:6px 14px;border-radius:20px;border:0.5px solid var(--border2);font-size:11px;letter-spacing:.04em;color:var(--text2);background:transparent;cursor:pointer;transition:all .2s;white-space:nowrap;user-select:none}
+.cat-tab.active{background:var(--gold);color:#0C0C0C;border-color:var(--gold);font-weight:500}
+.cat-tab:hover:not(.active){border-color:var(--gold-dim);color:var(--text)}
+
+/* section title */
+.section-title{padding:16px 18px 8px;font-family:'Noto Serif JP',serif;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:.12em;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+/* menu grid */
+.menu-grid{padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+
+/* card — NOT a button, pointer-events only on plus btn */
+.menu-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;position:relative;transition:border-color .25s}
+.menu-card.added{border-color:var(--gold-dim)}
+
+/* emoji placeholder */
+.menu-thumb{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden}
+.menu-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* qty pill on image */
+.qty-pill{position:absolute;top:8px;left:8px;background:var(--gold);color:#0C0C0C;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;display:none;z-index:2}
+.menu-card.added .qty-pill{display:block}
+
+.menu-body{padding:10px 12px 12px}
+.menu-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;line-height:1.45}
+.menu-desc{font-size:10px;color:var(--text3);margin-bottom:10px;line-height:1.5;min-height:28px}
+.menu-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.menu-price{font-size:13px;font-weight:500;color:var(--gold);letter-spacing:.01em;flex:1}
+.menu-price small{font-size:9px;color:var(--text3);font-weight:300}
+
+/* ── LARGE PLUS BUTTON ── */
+.plus-btn{
+  width:36px;height:36px;border-radius:10px;
+  border:1px solid var(--border2);
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+  transition:background .15s,border-color .15s,transform .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.plus-btn:hover{background:var(--bg4);border-color:var(--gold)}
+.plus-btn:active{transform:scale(.9)}
+.plus-btn svg{width:18px;height:18px;stroke:var(--gold);fill:none;stroke-width:2.2}
+.menu-card.added .plus-btn{background:var(--gold);border-color:var(--gold)}
+.menu-card.added .plus-btn svg{stroke:#0C0C0C}
+
+/* cart overlay & drawer */
+.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(3px)}
+.cart-overlay.open{opacity:1;pointer-events:all}
+.cart-drawer{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:0.5px solid var(--border2);border-radius:22px 22px 0 0;z-index:201;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);max-height:82vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,12px)}
+.cart-drawer.open{transform:translateY(0)}
+.drawer-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 0;flex-shrink:0}
+.drawer-header{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.drawer-title{font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;color:var(--text)}
+.drawer-close{width:30px;height:30px;border-radius:50%;border:0.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.drawer-close svg{width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2}
+.cart-items{overflow-y:auto;flex:1;padding:10px 18px}
+.cart-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:0.5px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.ci-name{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.ci-price{font-size:12px;color:var(--gold);min-width:56px;text-align:right;flex-shrink:0}
+.ci-qty{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.qty-btn{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;flex-shrink:0}
+.qty-btn:hover{background:var(--bg4)}
+.qty-num{font-size:14px;font-weight:500;color:var(--text);min-width:18px;text-align:center}
+.cart-footer{padding:14px 18px;border-top:0.5px solid var(--border);flex-shrink:0}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.total-label{font-size:12px;color:var(--text2)}
+.total-amount{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.order-btn{width:100%;padding:16px;background:var(--gold);color:#0C0C0C;font-family:'Noto Serif JP',serif;font-size:15px;font-weight:700;letter-spacing:.12em;border:none;border-radius:12px;cursor:pointer;transition:opacity .2s,transform .1s}
+.order-btn:hover{opacity:.9}
+.order-btn:active{transform:scale(.98)}
+.order-btn:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed}
+
+/* toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg3);border:0.5px solid var(--gold);border-radius:30px;padding:9px 20px;font-size:12px;color:var(--gold);white-space:nowrap;opacity:0;transition:all .28s;z-index:300;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* confirmed */
+.confirmed-screen{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;opacity:0;pointer-events:none;transition:opacity .4s}
+.confirmed-screen.show{opacity:1;pointer-events:all}
+.confirmed-ring{width:80px;height:80px;border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:28px}
+.confirmed-ring svg{width:34px;height:34px;stroke:var(--gold);fill:none;stroke-width:1.5}
+.confirmed-title{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px;letter-spacing:.06em;text-align:center}
+.confirmed-sub{font-size:12px;color:var(--text2);text-align:center;line-height:2;margin-bottom:36px}
+.back-btn{padding:12px 36px;border:0.5px solid var(--border2);border-radius:30px;background:transparent;color:var(--gold);font-size:12px;letter-spacing:.1em;cursor:pointer;transition:background .2s}
+.back-btn:hover{background:var(--bg3)}
+
+/* card anim */
+.menu-card{opacity:0;transform:translateY(14px);animation:fadeUp .38s forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.menu-card:nth-child(1){animation-delay:.04s}.menu-card:nth-child(2){animation-delay:.08s}
+.menu-card:nth-child(3){animation-delay:.12s}.menu-card:nth-child(4){animation-delay:.16s}
+.menu-card:nth-child(5){animation-delay:.20s}.menu-card:nth-child(6){animation-delay:.24s}
+.menu-card:nth-child(7){animation-delay:.28s}.menu-card:nth-child(8){animation-delay:.32s}
+.menu-card:nth-child(9){animation-delay:.36s}.menu-card:nth-child(10){animation-delay:.40s}
+
+.bottom-spacer{height:90px}
+.empty-cart{text-align:center;padding:36px 0;color:var(--text3);font-size:12px;line-height:2}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="store-name">
+    <small>阿波居酒屋</small>
+    頂
+  </div>
+  <div class="table-badge">掘り炬燵 K2</div>
+  <div class="cart-btn" onclick="openCart()">
+    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <div class="cart-count" id="cartCount">0</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">ご注文</div>
+  <div class="hero-row">
+    <div class="hero-table">掘り炬燵 <span>K2</span></div>
+  </div>
+  <div class="hero-meta">
+    <span>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      入店 19:23
+    </span>
+    <span>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      3名
+    </span>
+  </div>
+</div>
+
+<div class="cat-scroll" id="catScroll">
+  <div class="cat-tab active" onclick="filterCat(this,'all')">すべて</div>
+  <div class="cat-tab" onclick="filterCat(this,'toriaezu')">とんりゃえず</div>
+  <div class="cat-tab" onclick="filterCat(this,'kushi')">炭火串焼き</div>
+  <div class="cat-tab" onclick="filterCat(this,'tori')">阿波尾鶏</div>
+  <div class="cat-tab" onclick="filterCat(this,'kaisen')">海鮮</div>
+  <div class="cat-tab" onclick="filterCat(this,'niku')">肉料理</div>
+  <div class="cat-tab" onclick="filterCat(this,'drink')">お飲み物</div>
+  <div class="cat-tab" onclick="filterCat(this,'shime')">〆</div>
+</div>
+
+<div id="menuContainer"></div>
+<div class="bottom-spacer"></div>
+
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-header">
+    <div class="drawer-title">注文を確認</div>
+    <div class="drawer-close" onclick="closeCart()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="total-row">
+      <span class="total-label">合計（税込）</span>
+      <span class="total-amount" id="totalAmount">¥0</span>
+    </div>
+    <button class="order-btn" id="orderBtn" onclick="placeOrder()" disabled>注文する</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirmed-screen" id="confirmedScreen">
+  <div class="confirmed-ring">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="confirmed-title">ご注文ありがとうございます</div>
+  <div class="confirmed-sub">ただいま厨房に送信しました。<br>しばらくお待ちください。<br><br>追加のご注文はいつでもどうぞ。<br>QRの読み直しは不要です。</div>
+  <button class="back-btn" onclick="backToMenu()">メニューに戻る</button>
+</div>
+
+<script>
+const MENUS = [
+  // とんりゃえず
+  {id:1,cat:'toriaezu',name:'やみつきキャベツ',desc:'特製ダレで無限に食べられる一品',price:385,emoji:'🥬'},
+  {id:2,cat:'toriaezu',name:'鳴門産もずく酢',desc:'鳴門海峡育ちのとろとろもずく',price:385,emoji:'🌿'},
+  {id:3,cat:'toriaezu',name:'小松島産フィッシュカツ',desc:'徳島ソウルフード・揚げたてで',price:440,emoji:'🐟'},
+  {id:4,cat:'toriaezu',name:'冷奴',desc:'国産大豆・薬味たっぷり',price:385,emoji:'🍱'},
+  // 炭火串焼き
+  {id:5,cat:'kushi',name:'阿波尾鶏 もも',desc:'炭火でじっくり。塩・たれお選び',price:495,emoji:'🍢'},
+  {id:6,cat:'kushi',name:'阿波尾鶏 ねぎま',desc:'ねぎの甘みが引き立つ定番串',price:495,emoji:'🍢'},
+  {id:7,cat:'kushi',name:'阿波尾鶏 おろしポン酢',desc:'さっぱりと食べやすい人気メニュー',price:528,emoji:'🍢'},
+  {id:8,cat:'kushi',name:'つくね',desc:'軟骨入り・卵黄たれで',price:462,emoji:'🍢'},
+  // 阿波尾鶏
+  {id:9,cat:'tori',name:'阿波すだち鶏 唐揚げ',desc:'ジューシーな地鶏をからりと揚げた',price:748,emoji:'🍗'},
+  {id:10,cat:'tori',name:'阿波尾鶏 炭火焼き',desc:'旨みが凝縮された炭火仕上げ',price:880,emoji:'🔥'},
+  {id:11,cat:'tori',name:'唐揚げ チリソース',desc:'絶品チリソース・ごはんのお供にも',price:825,emoji:'🌶️'},
+  // 海鮮
+  {id:12,cat:'kaisen',name:'炙り〆サバ',desc:'迫力満点・大人気の炙り仕立て',price:880,emoji:'🐠'},
+  {id:13,cat:'kaisen',name:'シマホッケ開き',desc:'ボリューム満点・みんなでつついて',price:748,emoji:'🐡'},
+  {id:14,cat:'kaisen',name:'本日の旬魚造り',desc:'市場直送・仕入れにより変わります',price:980,emoji:'🍣'},
+  // 肉料理
+  {id:15,cat:'niku',name:'牛サーロインステーキ',desc:'自家製こがし醤油で',price:1958,emoji:'🥩'},
+  {id:16,cat:'niku',name:'熊本直送 馬刺し 上もも赤身',desc:'柔らかく肉本来の旨味が楽しめる',price:1650,emoji:'🐴'},
+  {id:17,cat:'niku',name:'さくらユッケ',desc:'上もも赤身の贅沢ユッケ仕立て',price:1650,emoji:'🥚'},
+  // ドリンク
+  {id:18,cat:'drink',name:'生ビール（中）',desc:'キリン一番搾り',price:550,emoji:'🍺'},
+  {id:19,cat:'drink',name:'徳島地酒 一合',desc:'鳴門鯛・ひやおろし',price:748,emoji:'🍶'},
+  {id:20,cat:'drink',name:'ハイボール',desc:'すっきり爽快・角ハイ',price:495,emoji:'🥃'},
+  {id:21,cat:'drink',name:'すだちサワー',desc:'徳島産すだちをたっぷりと',price:528,emoji:'🍋'},
+  // 〆
+  {id:22,cat:'shime',name:'出汁茶漬け',desc:'あっさり鯛だし・梅・わさび',price:528,emoji:'🍚'},
+  {id:23,cat:'shime',name:'焼きおにぎり',desc:'香ばしい醤油の香り',price:385,emoji:'🍙'},
+];
+
+const CAT_LABELS = {
+  toriaezu:'とんりゃえず',kushi:'炭火串焼き',
+  tori:'阿波尾鶏・郷鶏',kaisen:'海鮮料理',
+  niku:'絶品肉料理',drink:'お飲み物',shime:'〆'
+};
+
+let cart = {};
+let currentCat = 'all';
+
+function renderMenu(cat){
+  const filtered = cat==='all' ? MENUS : MENUS.filter(m=>m.cat===cat);
+  const grouped = {};
+  filtered.forEach(m=>{ if(!grouped[m.cat]) grouped[m.cat]=[]; grouped[m.cat].push(m); });
+
+  let html='';
+  Object.keys(grouped).forEach(c=>{
+    html+=`<div class="section-title">${CAT_LABELS[c]||c}</div><div class="menu-grid">`;
+    grouped[c].forEach(item=>{
+      const qty = cart[item.id]?cart[item.id].qty:0;
+      html+=`
+        <div class="menu-card ${qty>0?'added':''}" id="card${item.id}">
+          <div class="qty-pill" id="pill${item.id}">${qty}個</div>
+          <div class="menu-thumb">${item.emoji}</div>
+          <div class="menu-body">
+            <div class="menu-name">${item.name}</div>
+            <div class="menu-desc">${item.desc}</div>
+            <div class="menu-footer">
+              <div class="menu-price">¥${item.price.toLocaleString()} <small>税込</small></div>
+              <button class="plus-btn" onclick="addItem(${item.id})" aria-label="${item.name}を追加">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('menuContainer').innerHTML=html;
+}
+
+function filterCat(el,cat){
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentCat=cat;
+  renderMenu(cat);
+}
+
+function addItem(id){
+  const item=MENUS.find(m=>m.id===id);
+  if(!cart[id]) cart[id]={...item,qty:0};
+  cart[id].qty++;
+  const card=document.getElementById('card'+id);
+  const pill=document.getElementById('pill'+id);
+  if(card) card.classList.add('added');
+  if(pill) pill.textContent=cart[id].qty+'個';
+  updateCartCount();
+  showToast(item.name+' を追加');
+}
+
+function updateCartCount(){
+  const total=Object.values(cart).reduce((s,i)=>s+i.qty,0);
+  const el=document.getElementById('cartCount');
+  el.textContent=total;
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function openCart(){
+  renderCartItems();
+  document.getElementById('cartOverlay').classList.add('open');
+  document.getElementById('cartDrawer').classList.add('open');
+}
+function closeCart(){
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.getElementById('cartDrawer').classList.remove('open');
+}
+
+function renderCartItems(){
+  const items=Object.values(cart).filter(i=>i.qty>0);
+  let html='',total=0;
+  if(!items.length){
+    html='<div class="empty-cart">まだ何も選ばれていません</div>';
+  } else {
+    items.forEach(item=>{
+      const sub=item.price*item.qty;
+      total+=sub;
+      html+=`<div class="cart-item">
+        <div class="ci-name">${item.name}</div>
+        <div class="ci-qty">
+          <div class="qty-btn" onclick="changeQty(${item.id},-1)">−</div>
+          <div class="qty-num">${item.qty}</div>
+          <div class="qty-btn" onclick="changeQty(${item.id},1)">＋</div>
+        </div>
+        <div class="ci-price">¥${sub.toLocaleString()}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('cartItems').innerHTML=html;
+  document.getElementById('totalAmount').textContent='¥'+total.toLocaleString();
+  document.getElementById('orderBtn').disabled=!items.length;
+}
+
+function changeQty(id,delta){
+  if(!cart[id]) return;
+  cart[id].qty=Math.max(0,cart[id].qty+delta);
+  if(cart[id].qty===0) delete cart[id];
+  const card=document.getElementById('card'+id);
+  const pill=document.getElementById('pill'+id);
+  if(card){
+    const qty=cart[id]?cart[id].qty:0;
+    card.classList.toggle('added',qty>0);
+    if(pill) pill.textContent=qty+'個';
+  }
+  updateCartCount();
+  renderCartItems();
+}
+
+function placeOrder(){
+  closeCart();
+  setTimeout(()=>{
+    document.getElementById('confirmedScreen').classList.add('show');
+  },320);
+}
+
+function backToMenu(){
+  document.getElementById('confirmedScreen').classList.remove('show');
+  cart={};
+  updateCartCount();
+  renderMenu(currentCat);
+}
+
+renderMenu('all');
+</script>
+</body>
+</html>

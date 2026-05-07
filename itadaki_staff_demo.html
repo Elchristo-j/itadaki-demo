@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>頂 — スタッフ管理画面</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C9A84C;--gold-dim:#7A6030;--gold-light:#E8C97A;
+  --bg:#0C0C0C;--bg2:#141414;--bg3:#1C1C1C;--bg4:#242424;
+  --border:rgba(201,168,76,0.14);--border2:rgba(201,168,76,0.30);
+  --text:#EDE8DE;--text2:#A08C70;--text3:#5A4E3C;
+  --green:#4CAF7A;--green-bg:rgba(76,175,122,0.12);
+  --amber:#E8A030;--amber-bg:rgba(232,160,48,0.12);
+  --red:#E05252;--red-bg:rgba(224,82,82,0.12);
+  --blue:#5B9BD5;--blue-bg:rgba(91,155,213,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden;display:flex;flex-direction:column}
+
+/* grain */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.7}
+
+/* header */
+.header{position:sticky;top:0;z-index:100;background:rgba(12,12,12,0.95);backdrop-filter:blur(16px);border-bottom:0.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px}
+.header-logo{font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;color:var(--gold);letter-spacing:.1em}
+.header-logo small{display:block;font-size:9px;font-weight:400;color:var(--text3);letter-spacing:.2em}
+.header-spacer{flex:1}
+.clock{font-size:20px;font-weight:500;color:var(--text);letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.clock-date{font-size:10px;color:var(--text3);text-align:right;margin-top:1px}
+
+/* stat bar */
+.stat-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px;border-bottom:0.5px solid var(--border)}
+.stat{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px}
+.stat-label{font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-family:'Noto Serif JP',serif;font-size:20px;font-weight:700;color:var(--text);line-height:1}
+.stat-value.gold{color:var(--gold)}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+.stat-sub{font-size:9px;color:var(--text3);margin-top:2px}
+
+/* tabs */
+.tabs{display:flex;border-bottom:0.5px solid var(--border);padding:0 16px}
+.tab{padding:10px 16px;font-size:12px;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .2s;letter-spacing:.04em}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* floor area */
+.floor-wrap{padding:14px 16px;flex:1}
+.area-label{font-size:9px;font-weight:500;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.area-label::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+/* counter seats */
+.counter-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.seat{border-radius:10px;border:0.5px solid var(--border);background:var(--bg2);padding:10px 8px;min-width:72px;cursor:pointer;transition:all .2s;position:relative}
+.seat:active{transform:scale(.96)}
+.seat-id{font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:4px}
+.seat-status{font-size:11px;font-weight:500;line-height:1.3}
+.seat-time{font-size:9px;color:var(--text3);margin-top:3px}
+.seat-badge{position:absolute;top:-5px;right:-5px;font-size:9px;font-weight:500;padding:2px 6px;border-radius:10px;white-space:nowrap}
+
+.seat.empty{border-color:var(--border)}
+.seat.empty .seat-status{color:var(--text3)}
+.seat.using{border-color:rgba(76,175,122,0.4);background:var(--green-bg)}
+.seat.using .seat-status{color:var(--green)}
+.seat.reserved{border-color:rgba(91,155,213,0.4);background:var(--blue-bg)}
+.seat.reserved .seat-status{color:var(--blue)}
+.seat.checkout{border-color:rgba(224,82,82,0.5);background:var(--red-bg);animation:pulse 1.8s infinite}
+.seat.checkout .seat-status{color:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+.seat-badge.checkout{background:var(--red);color:#fff}
+.seat-badge.order{background:var(--amber);color:#0C0C0C}
+
+/* table grid */
+.table-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.tbl-card{border-radius:12px;border:0.5px solid var(--border);background:var(--bg2);padding:12px;cursor:pointer;transition:all .2s;position:relative}
+.tbl-card:active{transform:scale(.97)}
+.tbl-id{font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:6px}
+.tbl-guests{font-size:22px;font-weight:500;line-height:1;margin-bottom:2px}
+.tbl-guests span{font-size:11px;font-weight:300;color:var(--text3)}
+.tbl-amount{font-size:12px;color:var(--gold);margin-top:6px;font-weight:500}
+.tbl-time{font-size:9px;color:var(--text3);margin-top:2px}
+.tbl-orders{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tbl-order-item{font-size:9px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2);border:0.5px solid var(--border)}
+
+.tbl-card.empty .tbl-guests{color:var(--text3)}
+.tbl-card.using{border-color:rgba(76,175,122,0.4);background:var(--green-bg)}
+.tbl-card.using .tbl-guests{color:var(--green)}
+.tbl-card.checkout{border-color:rgba(224,82,82,0.5);background:var(--red-bg);animation:pulse 1.8s infinite}
+.tbl-card.checkout .tbl-guests{color:var(--red)}
+.tbl-card .seat-badge{position:absolute;top:-5px;right:-5px}
+
+/* kottatsu */
+.kottatsu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.ktbl{border-radius:12px;border:0.5px solid var(--border);background:var(--bg2);padding:12px;cursor:pointer;transition:all .2s;position:relative}
+.ktbl:active{transform:scale(.97)}
+.ktbl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ktbl-id{font-size:9px;color:var(--text3);letter-spacing:.1em}
+.merge-tag{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--blue-bg);color:var(--blue);border:0.5px solid rgba(91,155,213,0.3)}
+.ktbl-guests{font-size:22px;font-weight:500;line-height:1;margin-bottom:2px}
+.ktbl-guests span{font-size:11px;font-weight:300;color:var(--text3)}
+.ktbl-amount{font-size:12px;color:var(--gold);margin-top:6px;font-weight:500}
+.ktbl-time{font-size:9px;color:var(--text3);margin-top:2px}
+
+.ktbl.empty .ktbl-guests{color:var(--text3)}
+.ktbl.using{border-color:rgba(76,175,122,0.4);background:var(--green-bg)}
+.ktbl.using .ktbl-guests{color:var(--green)}
+.ktbl.checkout{border-color:rgba(224,82,82,0.5);background:var(--red-bg);animation:pulse 1.8s infinite}
+.ktbl.checkout .ktbl-guests{color:var(--red)}
+.ktbl.merged{border-color:rgba(91,155,213,0.4);background:var(--blue-bg);grid-column:1/3}
+.ktbl.merged .ktbl-guests{color:var(--blue)}
+
+/* order notification drawer */
+.notif-area{position:fixed;bottom:0;left:0;right:0;z-index:200;padding:0 16px 16px;pointer-events:none}
+.notif{background:var(--bg3);border:0.5px solid var(--gold);border-radius:14px;padding:14px 16px;margin-top:8px;display:flex;align-items:flex-start;gap:12px;pointer-events:all;animation:slideUp .35s cubic-bezier(.32,.72,0,1) forwards;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:4px;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.notif-body{flex:1}
+.notif-title{font-size:12px;font-weight:500;color:var(--gold);margin-bottom:3px}
+.notif-items{font-size:11px;color:var(--text2);line-height:1.7}
+.notif-close{font-size:18px;color:var(--text3);cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
+.notif-close:hover{color:var(--text2)}
+
+/* bottom nav */
+.bottom-nav{position:sticky;bottom:0;background:rgba(12,12,12,0.96);backdrop-filter:blur(14px);border-top:0.5px solid var(--border);display:flex;padding:10px 0 env(safe-area-inset-bottom,10px)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0}
+.nav-icon{font-size:20px;color:var(--text3);transition:color .2s}
+.nav-label{font-size:9px;color:var(--text3);letter-spacing:.06em;transition:color .2s}
+.nav-item.active .nav-icon,.nav-item.active .nav-label{color:var(--gold)}
+
+/* new order badge on nav */
+.nav-badge{position:absolute;top:-2px;right:8px;background:var(--red);color:#fff;font-size:9px;font-weight:500;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.nav-icon-wrap{position:relative;display:inline-block}
+
+/* fade in cards */
+.seat,.tbl-card,.ktbl{opacity:0;animation:fadeUp .35s forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- header -->
+<header class="header">
+  <div class="header-logo"><small>スタッフ管理</small>阿波居酒屋 頂</div>
+  <div class="header-spacer"></div>
+  <div>
+    <div class="clock" id="clock">--:--</div>
+    <div class="clock-date" id="clockDate"></div>
+  </div>
+</header>
+
+<!-- stat bar -->
+<div class="stat-bar">
+  <div class="stat">
+    <div class="stat-label">使用中</div>
+    <div class="stat-value green" id="statUsing">7</div>
+    <div class="stat-sub">/ 13席</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">会計待ち</div>
+    <div class="stat-value red" id="statCheckout">2</div>
+    <div class="stat-sub">テーブル</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">新規注文</div>
+    <div class="stat-value gold" id="statOrders">3</div>
+    <div class="stat-sub">件 未確認</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">本日売上</div>
+    <div class="stat-value gold">¥48.2k</div>
+    <div class="stat-sub">目標 80k</div>
+  </div>
+</div>
+
+<!-- tabs -->
+<div class="tabs">
+  <div class="tab active">フロアマップ</div>
+  <div class="tab">注文キュー</div>
+  <div class="tab">予約一覧</div>
+  <div class="tab">売上</div>
+</div>
+
+<!-- floor -->
+<div class="floor-wrap">
+
+  <div class="area-label">カウンター席　C1〜C6　— ロールスクリーン仕切り可</div>
+  <div class="counter-row" id="counterRow"></div>
+
+  <div class="area-label">テーブル席　T1〜T3　— 4人掛け</div>
+  <div class="table-grid" id="tableGrid"></div>
+
+  <div class="area-label">掘り炬燵　K1〜K4　— 連結・分離自由</div>
+  <div class="kottatsu-grid" id="kottatsuGrid"></div>
+
+</div>
+
+<!-- notifications -->
+<div class="notif-area" id="notifArea"></div>
+
+<!-- bottom nav -->
+<nav class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon-wrap"><span class="nav-icon">🗺️</span></div>
+    <div class="nav-label">フロア</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon-wrap" style="position:relative">
+      <span class="nav-icon">🔔</span>
+      <span class="nav-badge" id="orderBadge">3</span>
+    </div>
+    <div class="nav-label">注文</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon-wrap"><span class="nav-icon">📅</span></div>
+    <div class="nav-label">予約</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon-wrap"><span class="nav-icon">📊</span></div>
+    <div class="nav-label">売上</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon-wrap"><span class="nav-icon">⚙️</span></div>
+    <div class="nav-label">設定</div>
+  </div>
+</nav>
+
+<script>
+// ── clock ──
+function updateClock(){
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = h+':'+m+':'+s;
+  const days=['日','月','火','水','木','金','土'];
+  document.getElementById('clockDate').textContent =
+    `${now.getMonth()+1}/${now.getDate()}（${days[now.getDay()]}）`;
+}
+updateClock();
+setInterval(updateClock,1000);
+
+// ── data ──
+const counters = [
+  {id:'C1', status:'empty', label:'空席', time:''},
+  {id:'C2', status:'using', label:'1名', time:'18:42〜', amount:'¥1,200'},
+  {id:'C3', status:'using', label:'1名', time:'19:05〜', amount:'¥880'},
+  {id:'C4', status:'checkout', label:'会計待ち', time:'20:12〜', amount:'¥2,340'},
+  {id:'C5', status:'empty', label:'空席', time:''},
+  {id:'C6', status:'reserved', label:'20:30〜', time:'2名様予約', amount:''},
+];
+
+const tables = [
+  {id:'T1', status:'using', guests:3, time:'18:30〜', amount:'¥8,460',
+   orders:['唐揚げ','生ビール×3','刺し盛り']},
+  {id:'T2', status:'checkout', guests:4, time:'19:00〜', amount:'¥12,800',
+   orders:['会計待ち'], badge:'checkout'},
+  {id:'T3', status:'reserved', guests:0, time:'21:00〜 4名', amount:'',
+   orders:['予約済']},
+];
+
+const kottatsu = [
+  {id:'K1', status:'using', guests:4, time:'18:50〜', amount:'¥9,240',
+   orders:['焼き鳥×5','日本酒×2'], merged:false},
+  {id:'K2+K3', status:'using', guests:8, time:'19:10〜', amount:'¥18,600',
+   orders:['刺し盛り×2','ビール×8','唐揚げ×2'], merged:true, mergeLabel:'K2・K3 連結中'},
+  {id:'K4', status:'empty', guests:0, time:'', amount:'', merged:false},
+];
+
+// ── render counters ──
+const cr = document.getElementById('counterRow');
+counters.forEach((c,i)=>{
+  const d = document.createElement('div');
+  d.className = 'seat '+c.status;
+  d.style.animationDelay = (i*0.05)+'s';
+  let badge = '';
+  if(c.status==='checkout') badge = `<span class="seat-badge checkout">会計！</span>`;
+  if(c.status==='using' && i===1) badge = `<span class="seat-badge order">注文</span>`;
+  d.innerHTML = `${badge}<div class="seat-id">${c.id}</div><div class="seat-status">${c.label}</div><div class="seat-time">${c.time}</div>`;
+  cr.appendChild(d);
+});
+
+// ── render tables ──
+const tg = document.getElementById('tableGrid');
+tables.forEach((t,i)=>{
+  const d = document.createElement('div');
+  d.className = 'tbl-card '+t.status;
+  d.style.animationDelay = (i*0.07+0.3)+'s';
+  let badge = '';
+  if(t.status==='checkout') badge = `<span class="seat-badge checkout">会計！</span>`;
+  const guestHtml = t.guests>0 ? `<div class="tbl-guests">${t.guests}<span>名</span></div>` : `<div class="tbl-guests" style="font-size:13px;color:var(--text3)">${t.time}</div>`;
+  const ordersHtml = t.orders.map(o=>`<span class="tbl-order-item">${o}</span>`).join('');
+  d.innerHTML = `${badge}<div class="tbl-id">${t.id}</div>${guestHtml}<div class="tbl-time">${t.status!=='reserved'?t.time:''}</div>${t.amount?`<div class="tbl-amount">${t.amount}</div>`:''}<div class="tbl-orders">${ordersHtml}</div>`;
+  tg.appendChild(d);
+});
+
+// ── render kottatsu ──
+const kg = document.getElementById('kottatsuGrid');
+kottatsu.forEach((k,i)=>{
+  const d = document.createElement('div');
+  d.className = 'ktbl '+k.status+(k.merged?' merged':'');
+  d.style.animationDelay = (i*0.07+0.5)+'s';
+  const mergeTag = k.merged ? `<span class="merge-tag">連結中</span>` : '';
+  const guestHtml = k.guests>0 ? `<div class="ktbl-guests">${k.guests}<span>名</span></div>` : `<div class="ktbl-guests" style="font-size:14px;color:var(--text3)">空席</div>`;
+  const ordersHtml = k.orders ? k.orders.map(o=>`<span class="tbl-order-item">${o}</span>`).join('') : '';
+  d.innerHTML = `
+    <div class="ktbl-header"><div class="ktbl-id">${k.merged?k.mergeLabel:k.id}</div>${mergeTag}</div>
+    ${guestHtml}
+    <div class="ktbl-time">${k.time}</div>
+    ${k.amount?`<div class="ktbl-amount">${k.amount}</div>`:''}
+    <div class="tbl-orders">${ordersHtml}</div>`;
+  kg.appendChild(d);
+});
+
+// ── notifications ──
+const notifs = [
+  { table:'K1', items:'阿波尾鶏 唐揚げ × 1　ハイボール × 2' },
+  { table:'T1', items:'本日の刺し盛り × 1　生ビール × 2' },
+  { table:'C2', items:'フィッシュカツ × 1' },
+];
+
+const na = document.getElementById('notifArea');
+let notifCount = notifs.length;
+
+function showNotif(n, delay){
+  setTimeout(()=>{
+    const d = document.createElement('div');
+    d.className = 'notif';
+    d.innerHTML = `
+      <div class="notif-dot"></div>
+      <div class="notif-body">
+        <div class="notif-title">新規注文 — ${n.table}</div>
+        <div class="notif-items">${n.items}</div>
+      </div>
+      <div class="notif-close" onclick="this.parentElement.remove();updateBadge()">✕</div>`;
+    na.appendChild(d);
+  }, delay);
+}
+
+function updateBadge(){
+  const remaining = na.querySelectorAll('.notif').length;
+  const badge = document.getElementById('orderBadge');
+  badge.textContent = remaining;
+  badge.style.display = remaining>0?'flex':'none';
+  document.getElementById('statOrders').textContent = remaining;
+}
+
+notifs.forEach((n,i) => showNotif(n, i*900+600));
+
+// auto dismiss after 12s
+setTimeout(()=>{
+  const all = na.querySelectorAll('.notif');
+  all.forEach((el,i)=> setTimeout(()=>{ el.remove(); updateBadge(); }, i*400));
+}, 12000);
+</script>
+</body>
+</html>
